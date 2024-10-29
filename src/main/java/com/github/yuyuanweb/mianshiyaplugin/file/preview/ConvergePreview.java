@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.UserDataHolderBase;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -65,16 +66,23 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
     public @NotNull JComponent getComponent() {
         if (myComponent == null) {
             jbEditorTabs = new JBEditorTabs(project, IdeFocusManager.getInstance(project), this);
-            for (int i = 0; i < fileEditors.length; i++) {
+
+            // 创建第一个面板
+            JComponent firstEditorComponent = fileEditors[0].getComponent();
+
+            // 为第二和第三个内容创建标签
+            for (int i = 1; i < fileEditors.length; i++) {
                 TabInfo tabInfo = new TabInfo(fileEditors[i].getComponent());
                 tabInfo.setText(names[i]);
                 tabInfos[i] = tabInfo;
                 jbEditorTabs.addTab(tabInfo);
             }
+
             jbEditorTabs.addListener(new TabsListener() {
                 @Override
                 public void selectionChanged(TabInfo oldSelection, TabInfo newSelection) {
-                    for (int i = 0; i < names.length; i++) {
+                    // 从 1 开始，因为 0 已经被上部分使用
+                    for (int i = 1; i < names.length; i++) {
                         if (newSelection.getText().equals(names[i])) {
                             fileEditors[i].setState(TabFileEditorState.TabFileEditorLoadState);
                             break;
@@ -83,8 +91,13 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
                 }
             });
 
+            // 使用 Splitter 来分隔上下部分
+            // false 表示垂直分隔，0.2f 表示初始比例
+            Splitter splitter = new Splitter(true, 0.2f);
+            splitter.setFirstComponent(firstEditorComponent);
+            splitter.setSecondComponent(jbEditorTabs);
 
-            myComponent = JBUI.Panels.simplePanel(jbEditorTabs);
+            myComponent = JBUI.Panels.simplePanel(splitter);
         }
         return myComponent;
     }

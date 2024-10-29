@@ -63,13 +63,18 @@ public class FileUtils {
     }
 
     public static void openFileEditorAndSaveState(File file, Project project, Long questionId) {
-        ApplicationManager.getApplication().invokeLater(() -> {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
             VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
             KeyFMap map = KeyFMap.EMPTY_MAP.plus(KeyConstant.QUESTION_ID_KEY, questionId);
             assert vf != null;
             vf.set(map);
-            OpenFileDescriptor descriptor = new OpenFileDescriptor(project, vf);
-            FileEditorManager.getInstance(project).openTextEditor(descriptor, false);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (ApplicationManager.getApplication().isDisposed()) {
+                    return;
+                }
+                OpenFileDescriptor descriptor = new OpenFileDescriptor(project, vf);
+                FileEditorManager.getInstance(project).openTextEditor(descriptor, false);
+            });
         });
     }
 

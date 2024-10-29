@@ -1,10 +1,12 @@
 package com.github.yuyuanweb.mianshiyaplugin.file.preview;
 
 import com.github.yuyuanweb.mianshiyaplugin.constant.ViewConstant;
+import com.github.yuyuanweb.mianshiyaplugin.utils.LogUtils;
 import com.intellij.codeHighlighting.BackgroundEditorHighlighter;
 import com.intellij.ide.structureView.StructureViewBuilder;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +26,18 @@ public class EditorWithPreview extends TextEditorWithPreview {
         editor.putUserData(PARENT_SPLIT_EDITOR_KEY, this);
         preview.putUserData(PARENT_SPLIT_EDITOR_KEY, this);
 
-        // 删除工具栏
-        getComponent().remove(0);
-        getComponent().revalidate();
-        getComponent().repaint();
+        // 将 UI 更新放到 invokeLater 中
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                // 删除工具栏
+                getComponent().remove(0);
+                getComponent().revalidate();
+                getComponent().repaint();
+            } catch (Exception e) {
+                // 处理异常
+                LogUtils.LOG.error(e.getMessage());
+            }
+        });
     }
 
     @NotNull

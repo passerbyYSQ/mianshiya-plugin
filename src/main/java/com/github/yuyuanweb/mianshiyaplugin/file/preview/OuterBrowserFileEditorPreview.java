@@ -57,7 +57,7 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
         this.project = project;
         this.file = file;
         this.webTypeEnum = webTypeEnum;
-        if (WebTypeEnum.QUESTION.equals(webTypeEnum)) {
+        if (!WebTypeEnum.COMMENT.equals(webTypeEnum)) {
             initComponent();
         }
     }
@@ -68,8 +68,8 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
             myComponent = JBUI.Panels.simplePanel();
             jbScrollPane = new JBScrollPane(JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             myComponent.addToCenter(jbScrollPane);
-            // QUESTION 类型会在构造函数中初始化，所以这里不需要
-            if (isLoad && !WebTypeEnum.QUESTION.equals(webTypeEnum)) {
+            // COMMENT 类型不会在构造函数中初始化
+            if (isLoad && WebTypeEnum.COMMENT.equals(webTypeEnum)) {
                 initComponent();
             }
         }
@@ -78,15 +78,17 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
 
     private void initComponent() {
         isLoad = true;
-        ApplicationManager.getApplication().invokeLater(() -> {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 KeyFMap keyFMap = file.get();
                 Long questionId = keyFMap.get(KeyConstant.QUESTION_ID_KEY);
-                if (questionId == null) {
-                    jbScrollPane.setViewportView(new JBLabel(TextConstant.LOGIN));
-                    return;
-                }
-                this.openArticle(questionId);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (questionId == null) {
+                        jbScrollPane.setViewportView(new JBLabel(TextConstant.LOGIN));
+                        return;
+                    }
+                    this.openArticle(questionId);
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -94,36 +96,43 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
     }
 
     private void openArticle(Long questionId) {
-        User loginUser = GlobalState.getInstance().getSavedUser();
-        if (loginUser == null) {
-            LoginPanel loginPanel = new LoginPanel(ProjectManager.getInstance().getDefaultProject());
-            loginPanel.showAndGet();
-        }
-
-        File file = null;
-        file = FileUtils.openArticle(project, false);
-        if (!file.exists()) {
-            myComponent.addToCenter(new JBLabel("No solution"));
-        } else {
-            VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
-            if (vf != null) {
-                KeyFMap map = KeyFMap.EMPTY_MAP.plus(KeyConstant.QUESTION_ID_KEY, questionId);
-                map = map.plus(KeyConstant.WEB_TYPE_KEY, webTypeEnum);
-                vf.set(map);
-                BrowserFileEditorProvider contentProvider = new BrowserFileEditorProvider();
-                FileEditor newEditor = contentProvider.createEditor(project, vf);
-                if (fileEditor != null) {
-                    jbScrollPane.setViewportView(new JBLabel("Loading......"));
-                    FileEditor temp = fileEditor;
-                    Disposer.dispose(temp);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            User loginUser = GlobalState.getInstance().getSavedUser();
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (loginUser == null) {
+                    LoginPanel loginPanel = new LoginPanel(ProjectManager.getInstance().getDefaultProject());
+                    loginPanel.showAndGet();
                 }
-                fileEditor = newEditor;
-                Disposer.register(this, fileEditor);
-                BorderLayoutPanel browserComponent = JBUI.Panels.simplePanel(newEditor.getComponent());
-                browserComponent.addToCenter(newEditor.getComponent());
-                jbScrollPane.setViewportView(browserComponent);
-            }
-        }
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    File file = null;
+                    file = FileUtils.openArticle(project, false);
+                    if (!file.exists()) {
+                        myComponent.addToCenter(new JBLabel("No solution"));
+                    } else {
+                        VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
+                        if (vf != null) {
+                            KeyFMap map = KeyFMap.EMPTY_MAP.plus(KeyConstant.QUESTION_ID_KEY, questionId);
+                            map = map.plus(KeyConstant.WEB_TYPE_KEY, webTypeEnum);
+                            vf.set(map);
+                            BrowserFileEditorProvider contentProvider = new BrowserFileEditorProvider();
+                            FileEditor newEditor = contentProvider.createEditor(project, vf);
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                if (fileEditor != null) {
+                                    jbScrollPane.setViewportView(new JBLabel("Loading......"));
+                                    FileEditor temp = fileEditor;
+                                    Disposer.dispose(temp);
+                                }
+                                fileEditor = newEditor;
+                                Disposer.register(this, fileEditor);
+                                BorderLayoutPanel browserComponent = JBUI.Panels.simplePanel(newEditor.getComponent());
+                                browserComponent.addToCenter(newEditor.getComponent());
+                                jbScrollPane.setViewportView(browserComponent);
+                            });
+                        }
+                    }
+                });
+            });
+        });
     }
 
     @Override
