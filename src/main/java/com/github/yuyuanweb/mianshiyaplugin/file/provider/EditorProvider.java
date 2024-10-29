@@ -67,9 +67,6 @@ public class EditorProvider extends SplitTextEditorProvider {
     @Override
     protected FileEditor createSplitEditor(@NotNull FileEditor firstEditor, @NotNull FileEditor secondEditor) {
 
-        LOG.warn("mianshiya log secondEditor.getFile() :" + secondEditor.getFile());
-        LOG.warn("mianshiya log secondEditor.getName() :" + secondEditor.getName());
-        LOG.warn("mianshiya log firstEditor :" + firstEditor);
         return new EditorWithPreview((TextEditor) secondEditor, firstEditor);
     }
 

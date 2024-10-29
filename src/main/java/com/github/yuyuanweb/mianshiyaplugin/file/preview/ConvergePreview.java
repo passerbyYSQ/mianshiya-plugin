@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.UserDataHolderBase;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
+import com.intellij.openapi.wm.WindowManager;
 import com.intellij.pom.Navigatable;
 import com.intellij.ui.tabs.TabInfo;
 import com.intellij.ui.tabs.TabsListener;
@@ -93,7 +94,16 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
 
             // 使用 Splitter 来分隔上下部分
             // false 表示垂直分隔，0.2f 表示初始比例
-            Splitter splitter = new Splitter(true, 0.2f);
+            JFrame frame = WindowManager.getInstance().getFrame(project);
+            float proportion = 0;
+            if (frame != null) {
+                int height = frame.getHeight();
+                // 处理获取的高度
+                proportion = 200.0f / height;
+            } else {
+                proportion = 0.2f;
+            }
+            Splitter splitter = new Splitter(true, proportion);
             splitter.setFirstComponent(firstEditorComponent);
             splitter.setSecondComponent(jbEditorTabs);
 
