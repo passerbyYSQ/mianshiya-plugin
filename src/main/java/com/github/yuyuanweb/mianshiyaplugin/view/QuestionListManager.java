@@ -1,7 +1,9 @@
 package com.github.yuyuanweb.mianshiyaplugin.view;
 
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ReflectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.github.yuyuanweb.mianshiyaplugin.constant.PageConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.TextConstant;
 import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
@@ -412,7 +414,15 @@ public class QuestionListManager {
         }
 
         try {
-            return mianShiYaApi.searchQuestionList(queryRequest).execute().body();
+            if (StrUtil.isNotBlank(queryRequest.getTitle())) {
+                // 如果 title 不为空，使用搜索逻辑
+                return mianShiYaApi.searchQuestionList(queryRequest).execute().body();
+            } else if (ObjUtil.isNotEmpty(queryRequest.getQuestionBankId())) {
+                // 如果 questionBankId 不为空，从题库中查找
+                return mianShiYaApi.listQuestionByQuestionBank(queryRequest).execute().body();
+            } else {
+                return mianShiYaApi.getQuestionList(queryRequest).execute().body();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

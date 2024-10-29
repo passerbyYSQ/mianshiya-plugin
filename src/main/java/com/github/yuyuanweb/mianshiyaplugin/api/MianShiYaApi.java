@@ -47,12 +47,9 @@ public interface MianShiYaApi {
             @Body QuestionQueryRequest queryRequest
     );
 
-    /**
-     * 获取题目详情
-     */
-    @GET("question/get/vo")
-    Call<BaseResponse<Question>> getQuestion(
-            @Query("questionId") long questionId
+    @POST("question_bank/list_question")
+    Call<BaseResponse<Page<Question>>> listQuestionByQuestionBank(
+            @Body QuestionQueryRequest queryRequest
     );
 
     /**
