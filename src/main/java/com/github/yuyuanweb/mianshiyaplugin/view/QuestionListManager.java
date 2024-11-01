@@ -107,6 +107,8 @@ public class QuestionListManager {
             // 点击清除按钮后触发
             @Override
             protected void onFieldCleared() {
+                questionQueryRequest.setCurrent(PageConstant.FIRST_PAGE);
+                currentPage[0] = PageConstant.FIRST_PAGE;
                 QuestionListManager.this.searchAndLoadData(questionQueryRequest);
             }
         };
@@ -141,6 +143,8 @@ public class QuestionListManager {
                     // 回车键按下时执行的操作
                     String text = searchField.getText();
                     questionQueryRequest.setTitle(text);
+                    questionQueryRequest.setCurrent(PageConstant.FIRST_PAGE);
+                    currentPage[0] = PageConstant.FIRST_PAGE;
                     QuestionListManager.this.searchAndLoadData(questionQueryRequest);
                 }
             }
@@ -154,6 +158,8 @@ public class QuestionListManager {
         searchButton.addActionListener(e -> {
             String keyword = searchField.getText();
             questionQueryRequest.setTitle(keyword);
+            questionQueryRequest.setCurrent(PageConstant.FIRST_PAGE);
+            currentPage[0] = PageConstant.FIRST_PAGE;
             this.searchAndLoadData(questionQueryRequest);
         });
         ApplicationManager.getApplication().invokeLater(() -> {
