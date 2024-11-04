@@ -99,7 +99,7 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             User loginUser = GlobalState.getInstance().getSavedUser();
             ApplicationManager.getApplication().invokeLater(() -> {
-                if (loginUser == null) {
+                if (loginUser == null && WebTypeEnum.QUESTION.equals(webTypeEnum)) {
                     LoginPanel loginPanel = new LoginPanel(ProjectManager.getInstance().getDefaultProject());
                     loginPanel.showAndGet();
                 }
