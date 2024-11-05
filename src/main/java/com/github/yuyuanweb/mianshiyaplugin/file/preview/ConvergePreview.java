@@ -18,6 +18,7 @@ import com.intellij.ui.tabs.TabInfo;
 import com.intellij.ui.tabs.TabsListener;
 import com.intellij.ui.tabs.impl.JBEditorTabs;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.components.BorderLayoutPanel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -70,6 +71,7 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
 
             // 创建第一个面板
             JComponent firstEditorComponent = fileEditors[0].getComponent();
+            BorderLayoutPanel firstComponent = JBUI.Panels.simplePanel(firstEditorComponent);
 
             // 为第二和第三个内容创建标签
             for (int i = 1; i < fileEditors.length; i++) {
@@ -104,7 +106,7 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
                 proportion = 0.2f;
             }
             Splitter splitter = new Splitter(true, proportion);
-            splitter.setFirstComponent(firstEditorComponent);
+            splitter.setFirstComponent(firstComponent);
             splitter.setSecondComponent(jbEditorTabs);
 
             myComponent = JBUI.Panels.simplePanel(splitter);

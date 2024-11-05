@@ -12,11 +12,15 @@ public interface KeyConstant {
 
     String QUESTION_ID = "questionId";
 
+    String QUESTION_BANK_ID = "QuestionBankId";
+
     String WEB_TYPE = "webType";
 
     Key<Long> QUESTION_ID_KEY = new Key<>(KeyConstant.QUESTION_ID);
 
     Key<WebTypeEnum> WEB_TYPE_KEY = new Key<>(KeyConstant.WEB_TYPE);
+
+    Key<Long> QUESTION_BANK_ID_KEY = new Key<>(KeyConstant.QUESTION_BANK_ID);
 
     String QUESTION_BANK_ZH = "题库大全";
     String QUESTION_BANK = "QUESTION_BANK";

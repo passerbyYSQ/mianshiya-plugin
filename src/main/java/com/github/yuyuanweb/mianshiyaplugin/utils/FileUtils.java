@@ -41,7 +41,7 @@ public class FileUtils {
         return file;
     }
 
-    public static void openNewEditorTab(Project project, Long questionId, Long questionNum, String questionTitle) {
+    public static void openNewEditorTab(Project project, Long questionId, Long questionBankId, Long questionNum, String questionTitle) {
 
         // 创建一个临时文件并写入内容
         if (StrUtil.isBlank(questionTitle)) {
@@ -59,13 +59,14 @@ public class FileUtils {
         if (!tempFile.exists()) {
             FileUtil.writeString(questionTitle, filePath, StandardCharsets.UTF_8);
         }
-        FileUtils.openFileEditorAndSaveState(tempFile, project, questionId);
+        FileUtils.openFileEditorAndSaveState(tempFile, project, questionId, questionBankId);
     }
 
-    public static void openFileEditorAndSaveState(File file, Project project, Long questionId) {
+    public static void openFileEditorAndSaveState(File file, Project project, Long questionId, Long questionBankId) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file);
             KeyFMap map = KeyFMap.EMPTY_MAP.plus(KeyConstant.QUESTION_ID_KEY, questionId);
+            map = map.plus(KeyConstant.QUESTION_BANK_ID_KEY, questionBankId);
             assert vf != null;
             vf.set(map);
             ApplicationManager.getApplication().invokeLater(() -> {

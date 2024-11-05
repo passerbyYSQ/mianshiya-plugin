@@ -26,6 +26,7 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     implementation(libs.hutool)
+    implementation(libs.hutool.cache)
     implementation(libs.retrofit2)
     implementation(libs.converter.gson)
 //    implementation(libs.flexmark)

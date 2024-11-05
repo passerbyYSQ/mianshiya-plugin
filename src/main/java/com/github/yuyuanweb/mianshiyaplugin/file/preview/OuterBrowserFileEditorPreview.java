@@ -82,12 +82,13 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
             try {
                 KeyFMap keyFMap = file.get();
                 Long questionId = keyFMap.get(KeyConstant.QUESTION_ID_KEY);
+                Long questionBankId = keyFMap.get(KeyConstant.QUESTION_BANK_ID_KEY);
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (questionId == null) {
                         jbScrollPane.setViewportView(new JBLabel(TextConstant.LOGIN));
                         return;
                     }
-                    this.openArticle(questionId);
+                    this.openArticle(questionId, questionBankId);
                 });
             } catch (Exception e) {
                 e.printStackTrace();
@@ -95,7 +96,7 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
         });
     }
 
-    private void openArticle(Long questionId) {
+    private void openArticle(Long questionId, Long questionBankId) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             User loginUser = GlobalState.getInstance().getSavedUser();
             ApplicationManager.getApplication().invokeLater(() -> {
@@ -113,6 +114,7 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
                         if (vf != null) {
                             KeyFMap map = KeyFMap.EMPTY_MAP.plus(KeyConstant.QUESTION_ID_KEY, questionId);
                             map = map.plus(KeyConstant.WEB_TYPE_KEY, webTypeEnum);
+                            map = map.plus(KeyConstant.QUESTION_BANK_ID_KEY, questionBankId);
                             vf.set(map);
                             BrowserFileEditorProvider contentProvider = new BrowserFileEditorProvider();
                             FileEditor newEditor = contentProvider.createEditor(project, vf);

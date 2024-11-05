@@ -1,5 +1,6 @@
 package com.github.yuyuanweb.mianshiyaplugin.view;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ReflectUtil;
@@ -16,6 +17,7 @@ import com.github.yuyuanweb.mianshiyaplugin.model.enums.NeedVipEnum;
 import com.github.yuyuanweb.mianshiyaplugin.model.enums.QuestionDifficultyEnum;
 import com.github.yuyuanweb.mianshiyaplugin.model.response.Question;
 import com.github.yuyuanweb.mianshiyaplugin.model.response.QuestionBank;
+import com.github.yuyuanweb.mianshiyaplugin.utils.CacheUtil;
 import com.github.yuyuanweb.mianshiyaplugin.utils.ContentUtil;
 import com.github.yuyuanweb.mianshiyaplugin.utils.FileUtils;
 import com.github.yuyuanweb.mianshiyaplugin.utils.PanelUtil;
@@ -37,13 +39,14 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.github.yuyuanweb.mianshiyaplugin.config.ApiConfig.mianShiYaApi;
 import static com.github.yuyuanweb.mianshiyaplugin.constant.SearchComboBoxConstant.*;
+import static com.github.yuyuanweb.mianshiyaplugin.utils.CacheUtil.TIMED_CACHE;
 
 /**
  * @author pine
@@ -362,10 +365,37 @@ public class QuestionListManager {
 
                 // 创建表格
                 JBTable table = PanelUtil.createTablePanel(tableModel, (tempTable, mouseEvent) -> {
-                    Long questionId = Long.valueOf((String) tempTable.getValueAt(tempTable.getSelectedRow(), 0));
-                    String questionTitle = (String) tempTable.getValueAt(tempTable.getSelectedRow(), 1);
-                    Long questionNum = (Long) tempTable.getValueAt(tempTable.getSelectedRow(), 4);
-                    FileUtils.openNewEditorTab(project, questionId, questionNum, questionTitle);
+                    int selectedRow = tempTable.getSelectedRow();
+                    Long questionId = Long.valueOf((String) tempTable.getValueAt(selectedRow, 0));
+                    String questionTitle = (String) tempTable.getValueAt(selectedRow, 1);
+                    Long questionNum = (Long) tempTable.getValueAt(selectedRow, 4);
+                    Long questionBankId = questionQueryRequest.getQuestionBankId();
+                    FileUtils.openNewEditorTab(project, questionId, questionBankId, questionNum, questionTitle);
+                    // todo 异步获取该题库的题目顺序
+                    if (questionBankId != null) {
+                        String questionOrderKey = CacheUtil.QUESTION_ORDER_KEY + questionBankId;
+                        if (CollUtil.isEmpty(TIMED_CACHE.get(questionOrderKey))) {
+                            QuestionQueryRequest queryRequest = new QuestionQueryRequest();
+                            queryRequest.setCurrent(1);
+                            queryRequest.setPageSize(200);
+                            queryRequest.setQuestionBankId(questionBankId);
+                            try {
+                                Page<Question> questionPage = Objects.requireNonNull(mianShiYaApi.listQuestionByQuestionBank(queryRequest).execute().body()).getData();
+                                List<Question> pageRecords = questionPage.getRecords();
+                                if (questionPage != null && CollUtil.isNotEmpty(pageRecords)) {
+                                    HashMap<Long, Long> questionIdNextQuestionIdMap = new HashMap<>();
+                                    // 最后一个元素没有下一道题，不遍历
+                                    for (int i = 0; i < pageRecords.size() - 1; i++) {
+                                        questionIdNextQuestionIdMap.put(pageRecords.get(i).getId(), pageRecords.get(i + 1).getId());
+                                    }
+                                    TIMED_CACHE.put(questionOrderKey, questionIdNextQuestionIdMap);
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+
                 }, 3);
 
                 // 设置列宽为0，使列存在但不可见
