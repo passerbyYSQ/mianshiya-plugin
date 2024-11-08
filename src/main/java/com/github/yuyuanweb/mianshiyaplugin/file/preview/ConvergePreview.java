@@ -8,6 +8,7 @@ import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.ViewConstant;
 import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
 import com.github.yuyuanweb.mianshiyaplugin.model.dto.DoQuestionInfoVO;
+import com.github.yuyuanweb.mianshiyaplugin.model.enums.WebTypeEnum;
 import com.github.yuyuanweb.mianshiyaplugin.utils.ThemeUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -38,10 +39,12 @@ import org.jetbrains.annotations.Nullable;
 import retrofit2.Response;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.List;
+
+import static com.github.yuyuanweb.mianshiyaplugin.constant.SearchConstant.QUESTION_BANK_NULL_ID;
 
 
 /**
@@ -83,11 +86,13 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
     @Override
     public @NotNull JComponent getComponent() {
         if (myComponent == null) {
-            jbEditorTabs = new JBEditorTabs(project, IdeFocusManager.getInstance(project), this);
 
             // 创建第一个面板
             JComponent firstEditorComponent = fileEditors[0].getComponent();
             BorderLayoutPanel firstComponent = JBUI.Panels.simplePanel(firstEditorComponent);
+
+            jbEditorTabs = new JBEditorTabs(project, IdeFocusManager.getInstance(project), this);
+            BorderLayoutPanel secondComponent = JBUI.Panels.simplePanel(jbEditorTabs);
 
             // 为第二和第三个内容创建标签
             for (int i = 1; i < fileEditors.length; i++) {
@@ -112,67 +117,80 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
 
             // 使用 Splitter 来分隔上下部分
             // false 表示垂直分隔，0.2f 表示初始比例
+            Long questionBankId = file.get().get(KeyConstant.QUESTION_BANK_ID_KEY);
+            boolean nullQuestionBankId = QUESTION_BANK_NULL_ID.equals(questionBankId);
             JFrame frame = WindowManager.getInstance().getFrame(project);
             float proportion = 0;
-            if (frame != null) {
+            if (frame != null && !nullQuestionBankId) {
                 int height = frame.getHeight();
                 // 处理获取的高度
-                proportion = 235.0f / height;
+                proportion = 200.0f / height;
             } else {
                 proportion = 0.2f;
             }
             Splitter splitter = new Splitter(true, proportion);
             splitter.setFirstComponent(firstComponent);
-            splitter.setSecondComponent(jbEditorTabs);
+            splitter.setSecondComponent(secondComponent);
 
             myComponent = JBUI.Panels.simplePanel(splitter);
 
-            JButton nextQuestionButton = new JButton("下一题");
-            firstComponent.add(nextQuestionButton, BorderLayout.SOUTH);
+            // 如果 questionBankId 为 null，则不需要下一题按钮，直接返回组件
+            if (nullQuestionBankId) {
+                return myComponent;
+            }
 
-            Long questionBankId = file.get().get(KeyConstant.QUESTION_BANK_ID_KEY);
-            nextQuestionButton.addActionListener(event -> {
-                ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                    Long questionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
-                    if (questionBankId == null || questionId == null) {
-                        logger.warn("questionBankId 或 questionId 为空，questionBankId: " + questionBankId + ", questionId: " + questionId);
-                        return;
-                    }
-                    BaseResponse<DoQuestionInfoVO> questionInfo = this.getQuestionInfo(questionBankId, questionId);
-                    if (ObjUtil.hasNull(questionInfo, questionInfo.getData())) {
-                        logger.warn("questionInfo 或 questionInfo.getData() 为空，questionInfo: " + questionInfo + ", questionInfo.getData(): " + questionInfo.getData());
-                        return;
-                    }
-                    DoQuestionInfoVO questionInfoVO = questionInfo.getData();
-                    Integer currentQuestionIndex = questionInfoVO.getCurrentQuestionIndex();
-                    List<Long> questionIdList = questionInfoVO.getQuestionIdList();
-                    if (ObjUtil.hasNull(currentQuestionIndex, questionIdList)) {
-                        logger.warn("currentQuestionIndex 或 questionIdList 为空，currentQuestionIndex: " + currentQuestionIndex + ", questionIdList: " + questionIdList);
-                        return;
-                    }
-                    int curIndex = currentQuestionIndex + 1;
-                    if (curIndex >= CollUtil.size(questionIdList)) {
-                        logger.warn("curIndex 超出最大值，curIndex: " + curIndex + ", CollUtil.size(questionIdList.size()): " + CollUtil.size(questionIdList));
-                        Messages.showWarningDialog("已经是当前题库的最后一题啦，换个题库继续刷吧！", "没有下一题");
-                        return;
-                    }
-                    Long nextQuestionId = questionIdList.get(curIndex);
+            // 下一题按钮
+            String nextQuestionText = "下一题";
+            JButton nextQuestionButton = new JButton(nextQuestionText);
+            secondComponent.addToBottom(nextQuestionButton);
+            // 监听按钮事件
+            ActionListener nextQuestionListener = event -> ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                Long questionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
+                if (questionBankId == null || questionId == null) {
+                    logger.warn("questionBankId 或 questionId 为空，questionBankId: " + questionBankId + ", questionId: " + questionId);
+                    return;
+                }
+                BaseResponse<DoQuestionInfoVO> questionInfo = this.getQuestionInfo(questionBankId, questionId);
+                if (ObjUtil.hasNull(questionInfo, questionInfo.getData())) {
+                    logger.warn("questionInfo 或 questionInfo.getData() 为空，questionInfo: " + questionInfo + ", questionInfo.getData(): " + questionInfo.getData());
+                    return;
+                }
+                DoQuestionInfoVO questionInfoVO = questionInfo.getData();
+                Integer currentQuestionIndex = questionInfoVO.getCurrentQuestionIndex();
+                List<Long> questionIdList = questionInfoVO.getQuestionIdList();
+                if (ObjUtil.hasNull(currentQuestionIndex, questionIdList)) {
+                    logger.warn("currentQuestionIndex 或 questionIdList 为空，currentQuestionIndex: " + currentQuestionIndex + ", questionIdList: " + questionIdList);
+                    return;
+                }
+                int curIndex = currentQuestionIndex + 1;
+                if (curIndex >= CollUtil.size(questionIdList)) {
+                    logger.warn("curIndex 超出最大值，curIndex: " + curIndex + ", CollUtil.size(questionIdList.size()): " + CollUtil.size(questionIdList));
+                    Messages.showWarningDialog("已经是当前题库的最后一题啦，换个题库继续刷吧！", "没有下一题");
+                    return;
+                }
+                Long nextQuestionId = questionIdList.get(curIndex);
 
-                    KeyFMap map = file.get().plus(KeyConstant.QUESTION_ID_KEY, nextQuestionId);
-                    file.set(map);
+                KeyFMap map = file.get().plus(KeyConstant.QUESTION_ID_KEY, nextQuestionId);
+                file.set(map);
 
-                    String theme = ThemeUtil.getTheme();
-                    for (FileEditor fileEditor : fileEditors) {
-                        BrowserFileEditor browserFileEditor = (BrowserFileEditor) ((OuterBrowserFileEditorPreview) fileEditor).getNewEditor();
-                        if (browserFileEditor == null) {
-                            logger.warn("browserFileEditor 为空");
-                            return;
-                        }
-                        String url = String.format(CommonConstant.PLUGIN_QD, nextQuestionId, browserFileEditor.getWebTypeEnum().getValue(), theme);
-                        browserFileEditor.getJbCefBrowser().loadURL(url);
+                String theme = ThemeUtil.getTheme();
+                // 循环 问题、答案、评论 三个文件编辑器，更新题目
+                for (FileEditor fileEditor : fileEditors) {
+                    BrowserFileEditor browserFileEditor = (BrowserFileEditor) ((OuterBrowserFileEditorPreview) fileEditor).getNewEditor();
+                    if (browserFileEditor == null) {
+                        logger.warn("browserFileEditor 为空");
+                        return;
                     }
-                });
+                    String webType = browserFileEditor.getWebTypeEnum().getValue();
+                    String url = String.format(CommonConstant.PLUGIN_QD, nextQuestionId, webType, theme);
+                    browserFileEditor.getJbCefBrowser().loadURL(url);
+                    // if (WebTypeEnum.COMMENT.getValue().equals(webType)) {
+                    //     browserFileEditor.getJbCefBrowser().getCefBrowser().reload();
+                    // }
+                }
             });
+
+            nextQuestionButton.addActionListener(nextQuestionListener);
         }
         return myComponent;
     }

@@ -52,12 +52,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>0.5.1</h2>
-        <h3>Changed</h3>
-        <p>1、完善题目搜索功能</p>
-        <p>2、题目详情页的样式优化</p>
-        <h3>Fixed</h3>
-        <p>1、修复某些情况下页码不对问题</p>
+        <h2>0.5.2</h2>
+        <h3>add</h3>
+        <p>1、下一题功能</p>
     ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">

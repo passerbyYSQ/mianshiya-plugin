@@ -6,6 +6,7 @@ import com.github.yuyuanweb.mianshiyaplugin.model.enums.ErrorCode;
 import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
 import com.github.yuyuanweb.mianshiyaplugin.view.LoginPanel;
 import com.google.gson.Gson;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.ProjectManager;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
@@ -46,8 +47,10 @@ public class ResponseInterceptor implements Interceptor {
             return chain.proceed(originalRequest);
         }
         if (baseResponse.getCode() == ErrorCode.NOT_LOGIN_ERROR.getCode()) {
-            LoginPanel loginPanel = new LoginPanel(ProjectManager.getInstance().getDefaultProject());
-            loginPanel.showAndGet();
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                LoginPanel loginPanel = new LoginPanel(ProjectManager.getInstance().getDefaultProject());
+                loginPanel.showAndGet();
+            });
             originalRequest = originalRequest.newBuilder().header("Cookie", GlobalState.getInstance().getSavedCookie()).build();
             return chain.proceed(originalRequest);
         }

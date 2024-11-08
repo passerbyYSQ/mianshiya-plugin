@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import static com.github.yuyuanweb.mianshiyaplugin.config.ApiConfig.mianShiYaApi;
 import static com.github.yuyuanweb.mianshiyaplugin.constant.SearchComboBoxConstant.*;
+import static com.github.yuyuanweb.mianshiyaplugin.constant.SearchConstant.QUESTION_BANK_NULL_ID;
 
 /**
  * @author pine
@@ -367,6 +368,9 @@ public class QuestionListManager {
                     String questionTitle = (String) tempTable.getValueAt(selectedRow, 1);
                     Long questionNum = (Long) tempTable.getValueAt(selectedRow, 4);
                     Long questionBankId = questionQueryRequest.getQuestionBankId();
+                    if (questionBankId == null) {
+                        questionBankId = QUESTION_BANK_NULL_ID;
+                    }
                     FileUtils.openNewEditorTab(project, questionId, questionBankId, questionNum, questionTitle);
                 }, 3);
 
