@@ -52,6 +52,20 @@ public interface MianShiYaApi {
             @Body QuestionQueryRequest queryRequest
     );
 
+
+    /**
+     * 获取刷题信息
+     *
+     * @param questionBankId 题库 id
+     * @param questionId    题目 id
+     * @return {@link Call }<{@link BaseResponse }<{@link DoQuestionInfoVO }>>
+     */
+    @GET("question_bank/do_question_info")
+    Call<BaseResponse<DoQuestionInfoVO>> getDoQuestionInfo(
+            @Query("questionBankId") long questionBankId,
+            @Query("questionId") long questionId
+    );
+
     /**
      * 获取回答列表
      */

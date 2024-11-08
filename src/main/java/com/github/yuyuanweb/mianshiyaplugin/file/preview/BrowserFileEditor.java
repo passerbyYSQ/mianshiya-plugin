@@ -4,7 +4,6 @@ import com.github.yuyuanweb.mianshiyaplugin.config.GlobalState;
 import com.github.yuyuanweb.mianshiyaplugin.constant.CommonConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
 import com.github.yuyuanweb.mianshiyaplugin.model.enums.WebTypeEnum;
-import com.github.yuyuanweb.mianshiyaplugin.utils.CacheUtil;
 import com.github.yuyuanweb.mianshiyaplugin.utils.ThemeUtil;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorLocation;
@@ -15,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefCookie;
 import com.intellij.ui.jcef.JBCefCookieManager;
+import lombok.Getter;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefLoadHandlerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -23,9 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
-import java.util.HashMap;
 
-import static com.github.yuyuanweb.mianshiyaplugin.utils.CacheUtil.TIMED_CACHE;
 
 /**
  * 内嵌浏览器 文件编辑器
@@ -34,8 +32,13 @@ import static com.github.yuyuanweb.mianshiyaplugin.utils.CacheUtil.TIMED_CACHE;
  */
 public class BrowserFileEditor implements FileEditor {
 
+    @Getter
     private final JBCefBrowser jbCefBrowser;
+
     private final JPanel panel;
+
+    @Getter
+    private final WebTypeEnum webTypeEnum;
 
     public BrowserFileEditor(@NotNull Project project, @NotNull VirtualFile file) {
         this.jbCefBrowser = new JBCefBrowser();
@@ -55,27 +58,8 @@ public class BrowserFileEditor implements FileEditor {
             }
         }, jbCefBrowser.getCefBrowser());
         Long questionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
-        WebTypeEnum webTypeEnum = file.get().get(KeyConstant.WEB_TYPE_KEY);
+        webTypeEnum = file.get().get(KeyConstant.WEB_TYPE_KEY);
         if (questionId != null && webTypeEnum != null) {
-            Long questionBankId = file.get().get(KeyConstant.QUESTION_BANK_ID_KEY);
-            if (questionBankId != null) {
-                HashMap<Long, Long> questionOrderMap = TIMED_CACHE.get(CacheUtil.QUESTION_ORDER_KEY + questionBankId);
-                Long nextQuestionId = questionOrderMap.getOrDefault(questionId, null);
-                if (nextQuestionId != null) {
-                    JButton nextQuestionButton = new JButton("下一题");
-                    panel.add(nextQuestionButton, BorderLayout.SOUTH);
-                    nextQuestionButton.addActionListener(event -> {
-                        Long curQuestionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
-                        Long curNextQuestionId = questionOrderMap.getOrDefault(curQuestionId, null);
-                        file.set(file.get().plus(KeyConstant.QUESTION_ID_KEY, curNextQuestionId));
-                        String theme = ThemeUtil.getTheme();
-                        String url = String.format(CommonConstant.PLUGIN_QD, curNextQuestionId, webTypeEnum.getValue(), theme);
-                        jbCefBrowser.loadURL(url);
-                    });
-                }
-            }
-
-
             String theme = ThemeUtil.getTheme();
             String url = String.format(CommonConstant.PLUGIN_QD, questionId, webTypeEnum.getValue(), theme);
             jbCefBrowser.loadURL(url);

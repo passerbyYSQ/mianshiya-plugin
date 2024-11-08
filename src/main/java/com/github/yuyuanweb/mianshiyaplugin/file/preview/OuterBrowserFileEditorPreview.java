@@ -22,6 +22,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.keyFMap.KeyFMap;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
+import lombok.Getter;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +49,9 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
     private JBScrollPane jbScrollPane;
     private BorderLayoutPanel myComponent;
     private FileEditor fileEditor;
+
+    @Getter
+    private FileEditor newEditor;
 
     private boolean isLoad = false;
 
@@ -117,7 +121,7 @@ public class OuterBrowserFileEditorPreview extends UserDataHolderBase implements
                             map = map.plus(KeyConstant.QUESTION_BANK_ID_KEY, questionBankId);
                             vf.set(map);
                             BrowserFileEditorProvider contentProvider = new BrowserFileEditorProvider();
-                            FileEditor newEditor = contentProvider.createEditor(project, vf);
+                            newEditor = contentProvider.createEditor(project, vf);
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 if (fileEditor != null) {
                                     jbScrollPane.setViewportView(new JBLabel("Loading......"));

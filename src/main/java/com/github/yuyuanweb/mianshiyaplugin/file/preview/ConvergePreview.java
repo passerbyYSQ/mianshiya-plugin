@@ -1,12 +1,22 @@
 package com.github.yuyuanweb.mianshiyaplugin.file.preview;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
+import com.github.yuyuanweb.mianshiyaplugin.config.ApiConfig;
+import com.github.yuyuanweb.mianshiyaplugin.constant.CommonConstant;
+import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.ViewConstant;
+import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
+import com.github.yuyuanweb.mianshiyaplugin.model.dto.DoQuestionInfoVO;
+import com.github.yuyuanweb.mianshiyaplugin.utils.ThemeUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.UserDataHolderBase;
@@ -17,6 +27,7 @@ import com.intellij.pom.Navigatable;
 import com.intellij.ui.tabs.TabInfo;
 import com.intellij.ui.tabs.TabsListener;
 import com.intellij.ui.tabs.impl.JBEditorTabs;
+import com.intellij.util.keyFMap.KeyFMap;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import lombok.AllArgsConstructor;
@@ -24,9 +35,14 @@ import lombok.Data;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import retrofit2.Response;
 
 import javax.swing.*;
+import java.awt.*;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.util.List;
+
 
 /**
  * 聚合多个编辑器 文件编辑器
@@ -101,7 +117,7 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
             if (frame != null) {
                 int height = frame.getHeight();
                 // 处理获取的高度
-                proportion = 200.0f / height;
+                proportion = 235.0f / height;
             } else {
                 proportion = 0.2f;
             }
@@ -110,8 +126,72 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
             splitter.setSecondComponent(jbEditorTabs);
 
             myComponent = JBUI.Panels.simplePanel(splitter);
+
+            JButton nextQuestionButton = new JButton("下一题");
+            firstComponent.add(nextQuestionButton, BorderLayout.SOUTH);
+
+            Long questionBankId = file.get().get(KeyConstant.QUESTION_BANK_ID_KEY);
+            nextQuestionButton.addActionListener(event -> {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    Long questionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
+                    if (questionBankId == null || questionId == null) {
+                        logger.warn("questionBankId 或 questionId 为空，questionBankId: " + questionBankId + ", questionId: " + questionId);
+                        return;
+                    }
+                    BaseResponse<DoQuestionInfoVO> questionInfo = this.getQuestionInfo(questionBankId, questionId);
+                    if (ObjUtil.hasNull(questionInfo, questionInfo.getData())) {
+                        logger.warn("questionInfo 或 questionInfo.getData() 为空，questionInfo: " + questionInfo + ", questionInfo.getData(): " + questionInfo.getData());
+                        return;
+                    }
+                    DoQuestionInfoVO questionInfoVO = questionInfo.getData();
+                    Integer currentQuestionIndex = questionInfoVO.getCurrentQuestionIndex();
+                    List<Long> questionIdList = questionInfoVO.getQuestionIdList();
+                    if (ObjUtil.hasNull(currentQuestionIndex, questionIdList)) {
+                        logger.warn("currentQuestionIndex 或 questionIdList 为空，currentQuestionIndex: " + currentQuestionIndex + ", questionIdList: " + questionIdList);
+                        return;
+                    }
+                    int curIndex = currentQuestionIndex + 1;
+                    if (curIndex >= CollUtil.size(questionIdList)) {
+                        logger.warn("curIndex 超出最大值，curIndex: " + curIndex + ", CollUtil.size(questionIdList.size()): " + CollUtil.size(questionIdList));
+                        Messages.showWarningDialog("已经是当前题库的最后一题啦，换个题库继续刷吧！", "没有下一题");
+                        return;
+                    }
+                    Long nextQuestionId = questionIdList.get(curIndex);
+
+                    KeyFMap map = file.get().plus(KeyConstant.QUESTION_ID_KEY, nextQuestionId);
+                    file.set(map);
+
+                    String theme = ThemeUtil.getTheme();
+                    for (FileEditor fileEditor : fileEditors) {
+                        BrowserFileEditor browserFileEditor = (BrowserFileEditor) ((OuterBrowserFileEditorPreview) fileEditor).getNewEditor();
+                        if (browserFileEditor == null) {
+                            logger.warn("browserFileEditor 为空");
+                            return;
+                        }
+                        String url = String.format(CommonConstant.PLUGIN_QD, nextQuestionId, browserFileEditor.getWebTypeEnum().getValue(), theme);
+                        browserFileEditor.getJbCefBrowser().loadURL(url);
+                    }
+                });
+            });
         }
         return myComponent;
+    }
+
+    /**
+     * 获取刷题信息
+     */
+    public BaseResponse<DoQuestionInfoVO> getQuestionInfo(long questionBankId, long questionId) {
+        Response<BaseResponse<DoQuestionInfoVO>> response = null;
+        try {
+            response = ApiConfig.mianShiYaApi.getDoQuestionInfo(questionBankId, questionId)
+                    .execute();
+        } catch (IOException e) {
+            logger.error("获取题目信息失败: {}", e.getMessage());
+        }
+        if (response != null && response.isSuccessful()) {
+            return response.body();
+        }
+        return null;
     }
 
     @Override
