@@ -184,9 +184,9 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
                     String webType = browserFileEditor.getWebTypeEnum().getValue();
                     String url = String.format(CommonConstant.PLUGIN_QD, nextQuestionId, webType, theme);
                     browserFileEditor.getJbCefBrowser().loadURL(url);
-                    // if (WebTypeEnum.COMMENT.getValue().equals(webType)) {
-                    //     browserFileEditor.getJbCefBrowser().getCefBrowser().reload();
-                    // }
+                    if (WebTypeEnum.COMMENT.getValue().equals(webType)) {
+                        browserFileEditor.getJbCefBrowser().getCefBrowser().reload();
+                    }
                 }
             });
 
