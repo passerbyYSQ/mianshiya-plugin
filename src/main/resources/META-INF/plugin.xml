@@ -52,9 +52,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>0.5.2</h2>
-        <h3>add</h3>
-        <p>下一题功能</p>
+        <h2>0.5.3</h2>
+        <h3>fix</h3>
+        <p>修复已知 bug</p>
     ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">

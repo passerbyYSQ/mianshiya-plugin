@@ -2,9 +2,12 @@ package com.github.yuyuanweb.mianshiyaplugin.toolWindow;
 
 import cn.hutool.core.util.StrUtil;
 import com.github.yuyuanweb.mianshiyaplugin.actions.*;
+import com.github.yuyuanweb.mianshiyaplugin.config.ApiConfig;
 import com.github.yuyuanweb.mianshiyaplugin.config.GlobalState;
 import com.github.yuyuanweb.mianshiyaplugin.constant.CommonConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.IconConstant;
+import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
+import com.github.yuyuanweb.mianshiyaplugin.model.enums.ErrorCode;
 import com.github.yuyuanweb.mianshiyaplugin.model.response.User;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
@@ -22,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.io.IOException;
 
 import static com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant.*;
 
@@ -102,7 +106,16 @@ public class MyToolWindowFactory implements ToolWindowFactory {
             actionGroup.add(loginAction);
             actionManager.registerAction(LOGIN, loginAction);
         } else {
-            User loginUser = globalState.getSavedUser();
+            User loginUser = null;
+            try {
+                BaseResponse<User> response = ApiConfig.mianShiYaApi.getLoginUser().execute().body();
+                if (response != null && response.getCode() == ErrorCode.SUCCESS.getCode()) {
+                    loginUser = response.getData();
+                    globalState.saveUser(loginUser);
+                }
+            } catch (IOException e) {
+                logger.warn("获取登录用户失败");
+            }
             // 未登录
             if (loginUser == null) {
                 LoginAction loginAction = new LoginAction(LOGIN_ZH, IconConstant.LOGIN, actionGroup);
