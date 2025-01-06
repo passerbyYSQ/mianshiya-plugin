@@ -8,7 +8,6 @@ import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.ViewConstant;
 import com.github.yuyuanweb.mianshiyaplugin.model.common.BaseResponse;
 import com.github.yuyuanweb.mianshiyaplugin.model.dto.DoQuestionInfoVO;
-import com.github.yuyuanweb.mianshiyaplugin.model.enums.WebTypeEnum;
 import com.github.yuyuanweb.mianshiyaplugin.utils.ThemeUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -165,7 +164,10 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
                 int curIndex = currentQuestionIndex + 1;
                 if (curIndex >= CollUtil.size(questionIdList)) {
                     logger.warn("curIndex 超出最大值，curIndex: " + curIndex + ", CollUtil.size(questionIdList.size()): " + CollUtil.size(questionIdList));
-                    Messages.showWarningDialog("已经是当前题库的最后一题啦，换个题库继续刷吧！", "没有下一题");
+                    // 使用 invokeLater 确保在 EDT 线程中执行 UI 更新
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        Messages.showWarningDialog("已经是当前题库的最后一题啦，换个题库继续刷吧！", "没有下一题");
+                    });
                     return;
                 }
                 Long nextQuestionId = questionIdList.get(curIndex);
@@ -183,10 +185,10 @@ public class ConvergePreview extends UserDataHolderBase implements TextEditor {
                     }
                     String webType = browserFileEditor.getWebTypeEnum().getValue();
                     String url = String.format(CommonConstant.PLUGIN_QD, nextQuestionId, webType, theme);
-                    browserFileEditor.getJbCefBrowser().loadURL(url);
-                    if (WebTypeEnum.COMMENT.getValue().equals(webType)) {
-                        browserFileEditor.getJbCefBrowser().getCefBrowser().reload();
-                    }
+                    // 使用 invokeLater 确保在 EDT 线程中执行 UI 更新
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        browserFileEditor.getJbCefBrowser().loadURL(url);
+                    });
                 }
             });
 
