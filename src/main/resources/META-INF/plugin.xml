@@ -52,9 +52,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>0.5.3</h2>
+        <h2>0.5.4</h2>
         <h3>fix</h3>
-        <p>修复已知 bug</p>
+        <p>修复内嵌页面的登录问题</p>
+        <p>修复下一题功能的评论区未刷新问题</p>
     ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
