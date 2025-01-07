@@ -1,13 +1,7 @@
 package com.github.yuyuanweb.mianshiyaplugin.view;
 
-import com.github.yuyuanweb.mianshiyaplugin.config.GlobalState;
 import com.github.yuyuanweb.mianshiyaplugin.constant.CommonConstant;
-import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
 import com.github.yuyuanweb.mianshiyaplugin.manager.CookieManager;
-import com.github.yuyuanweb.mianshiyaplugin.model.response.User;
-import com.github.yuyuanweb.mianshiyaplugin.utils.PanelUtil;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.Disposer;
@@ -16,10 +10,7 @@ import com.intellij.ui.jcef.JCEFHtmlPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import org.cef.browser.CefBrowser;
-import org.cef.callback.CefCookieVisitor;
 import org.cef.handler.CefLoadHandlerAdapter;
-import org.cef.misc.BoolRef;
-import org.cef.network.CefCookie;
 import org.cef.network.CefCookieManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,11 +64,6 @@ public class LoginPanel extends DialogWrapper {
     @Override
     protected void doOKAction() {
         super.doOKAction();
-
-        ActionManager actionManager = ActionManager.getInstance();
-        DefaultActionGroup actionGroup = (DefaultActionGroup) actionManager.getAction(KeyConstant.ACTION_BAR);
-        User loginUser = GlobalState.getInstance().getSavedUser();
-        PanelUtil.modifyActionGroupWhenLogin(actionGroup, loginUser);
     }
 
     private class JcefPanel extends JCEFHtmlPanel {
@@ -101,26 +87,7 @@ public class LoginPanel extends DialogWrapper {
                 @Override
                 public void onLoadingStateChange(CefBrowser browser, boolean isLoading, boolean canGoBack, boolean canGoForward) {
                     CefCookieManager cefCookieManager = getJBCefCookieManager().getCefCookieManager();
-                    cefCookieManager.visitAllCookies(new CefCookieVisitor() {
-                        @Override
-                        public boolean visit(CefCookie cefCookie, int count, int total, BoolRef boolRef) {
-                            String session = "SESSION";
-                            if (session.equals(cefCookie.name)) {
-                                GlobalState globalState = GlobalState.getInstance();
-                                globalState.saveCookie(session + "=" + cefCookie.value);
-                                User loginUser = CookieManager.getLoginUser();
-                                if (loginUser != null) {
-                                    // Ensure the UI updates are done on the Event Dispatch Thread
-                                    globalState.saveUser(loginUser);
-                                    SwingUtilities.invokeLater(LoginPanel.this::doOKAction);
-                                } else {
-                                    globalState.removeSavedCookie();
-                                    globalState.removeSavedUser();
-                                }
-                            }
-                            return true;
-                        }
-                    });
+                    CookieManager.handleCookie(cefCookieManager, LoginPanel.this::doOKAction);
                 }
             }, getCefBrowser());
             loadURL(CommonConstant.WEB_HOST + "user/login");

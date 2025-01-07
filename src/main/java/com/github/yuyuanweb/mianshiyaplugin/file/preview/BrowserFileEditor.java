@@ -3,6 +3,7 @@ package com.github.yuyuanweb.mianshiyaplugin.file.preview;
 import com.github.yuyuanweb.mianshiyaplugin.config.GlobalState;
 import com.github.yuyuanweb.mianshiyaplugin.constant.CommonConstant;
 import com.github.yuyuanweb.mianshiyaplugin.constant.KeyConstant;
+import com.github.yuyuanweb.mianshiyaplugin.manager.CookieManager;
 import com.github.yuyuanweb.mianshiyaplugin.model.enums.WebTypeEnum;
 import com.github.yuyuanweb.mianshiyaplugin.utils.ThemeUtil;
 import com.intellij.openapi.fileEditor.FileEditor;
@@ -17,6 +18,7 @@ import com.intellij.ui.jcef.JBCefCookieManager;
 import lombok.Getter;
 import org.cef.browser.CefBrowser;
 import org.cef.handler.CefLoadHandlerAdapter;
+import org.cef.network.CefCookieManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,6 +59,15 @@ public class BrowserFileEditor implements FileEditor {
                 jbCefBrowser.setJBCefCookieManager(cookieManager);
             }
         }, jbCefBrowser.getCefBrowser());
+
+        jbCefBrowser.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
+            @Override
+            public void onLoadingStateChange(CefBrowser browser, boolean isLoading, boolean canGoBack, boolean canGoForward) {
+                CefCookieManager cefCookieManager = jbCefBrowser.getJBCefCookieManager().getCefCookieManager();
+                CookieManager.handleCookie(cefCookieManager, () -> {});
+            }
+        }, jbCefBrowser.getCefBrowser());
+
         Long questionId = file.get().get(KeyConstant.QUESTION_ID_KEY);
         webTypeEnum = file.get().get(KeyConstant.WEB_TYPE_KEY);
         if (questionId != null && webTypeEnum != null) {
