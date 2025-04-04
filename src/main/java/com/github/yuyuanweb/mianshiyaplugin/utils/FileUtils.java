@@ -25,7 +25,11 @@ public class FileUtils {
     public static int FILE_NAME_LENGTH = 7;
 
     public static String getTempDir() {
-        return FileUtil.getTmpDirPath() + "mianshiya/";
+        String tmpDirPath = FileUtil.getTmpDirPath();
+        String suffix = "mianshiya/";
+        return tmpDirPath.endsWith("/")
+                ? tmpDirPath + suffix
+                : tmpDirPath + "/" + suffix;
     }
 
     public static File openArticle(Project project, Boolean isOpenEditor) {
