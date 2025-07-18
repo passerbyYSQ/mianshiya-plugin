@@ -58,6 +58,19 @@
         <p>修复下一题功能的评论区未刷新问题</p>
     ]]></change-notes>
 
+    <actions>
+        <action
+                id="GenerateID"
+                class="com.github.yuyuanweb.mianshiyaplugin.actions.IdGeneratorAction"
+                text="Generate ID"
+                description="Insert ID at caret position">
+            <!-- 绑定快捷键 Ctrl+Alt+U -->
+            <keyboard-shortcut
+                    keymap="$default"
+                    first-keystroke="ctrl alt U"/>
+        </action>
+    </actions>
+
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow canCloseContents="true"
                     icon="/icons/favicon.svg"
@@ -76,6 +89,8 @@
         <editorTabTitleProvider
                 implementation="com.github.yuyuanweb.mianshiyaplugin.file.provider.CustomTabTitleProvider"
                 order="last"/>
+
+        <applicationService serviceImplementation="com.github.yuyuanweb.mianshiyaplugin.actions.IdTypeManager"/>
     </extensions>
 
     <applicationListeners>
