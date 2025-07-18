@@ -67,7 +67,7 @@
             <!-- 绑定快捷键 Ctrl+Alt+U -->
             <keyboard-shortcut
                     keymap="$default"
-                    first-keystroke="ctrl alt U"/>
+                    first-keystroke="ctrl alt K"/>
         </action>
     </actions>
 
